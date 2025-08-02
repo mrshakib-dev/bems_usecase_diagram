@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEMS - Enhanced UML Use Case Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 20px;
+            background: linear-gradient(to right, #f8fafc, #e2e8f0);
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .control-button {
+            padding: 12px 24px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            color: #475569;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-button:hover::before {
+            left: 100%;
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .control-button:active {
+            transform: translateY(0);
+        }
+
+        .diagram-container {
+            width: 100%;
+            height: 1200px;
+            position: relative;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            overflow: auto;
+        }
+
+        /* System Boundary */
+        .system-boundary {
+            position: absolute;
+            left: 180px;
+            top: 60px;
+            width: 1400px;
+            height: 1050px;
+            border: 3px dashed #10b981;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(240, 253, 244, 0.1), rgba(220, 252, 231, 0.05));
+            box-shadow: inset 0 2px 4px rgba(16, 185, 129, 0.1);
+        }
+
+        .system-title {
+            position: absolute;
+            left: 50%;
+            top: 25px;
+            transform: translateX(-50%);
+            font-size: 18px;
+            font-weight: 700;
+            color: #047857;
+            background: white;
+            padding: 8px 20px;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Actor Stick Figures */
+        .actor {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            opacity: 1;
+        }
+
+        .actor:hover {
+            transform: scale(1.15);
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+        }
+
+        .actor.active {
+            transform: scale(1.2);
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.4));
+        }
+
+        .actor.active .actor-figure {
+            stroke: #ef4444;
+            stroke-width: 3;
+        }
+
+        .actor-figure {
+            stroke: #1f2937;
+            stroke-width: 2.5;
+            fill: none;
+            transition: all 0.3s ease;
+        }
+
+        .actor-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-anchor: middle;
+            fill: #1f2937;
+            transition: all 0.3s ease;
+        }
+
+        .actor.active .actor-label {
+            fill: #ef4444;
+            font-size: 13px;
+        }
+
+        /* Use Case Ovals */
+        .use-case {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            opacity: 1;
+        }
+
+        .use-case:hover {
+            transform: scale(1.08);
+            filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.15));
+        }
+
+        .use-case-oval {
+            fill: #ffffff;
+            stroke: #64748b;
+            stroke-width: 2;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .use-case.highlighted {
+            transform: scale(1.12);
+            z-index: 10;
+            opacity: 1;
+        }
+
+        .use-case.highlighted .use-case-oval {
+            fill: #fef2f2;
+            stroke: #ef4444;
+            stroke-width: 3;
+            filter: drop-shadow(0 8px 25px rgba(239, 68, 68, 0.4));
+        }
+
+        .use-case.dimmed {
+            opacity: 0.2;
+            transform: scale(0.95);
+        }
+
+        .use-case-text {
+            font-size: 10px;
+            text-anchor: middle;
+            fill: #374151;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .use-case.highlighted .use-case-text {
+            fill: #dc2626;
+            font-weight: 700;
+            font-size: 10.5px;
+        }
+
+        /* Association Lines */
+        .association-line {
+            stroke: #94a3b8;
+            stroke-width: 1.5;
+            opacity: 0;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .association-line.visible {
+            opacity: 0.7;
+        }
+
+        .association-line.highlighted {
+            stroke: #ef4444;
+            stroke-width: 3;
+            opacity: 1;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Group Labels */
+        .group-label {
+            position: absolute;
+            font-size: 13px;
+            font-weight: 700;
+            color: #7c3aed;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #7c3aed;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .group-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+        }
+
+        /* Group Containers */
+        .group-container {
+            fill: rgba(255, 255, 255, 0.05);
+            stroke: #e2e8f0;
+            stroke-width: 2;
+            stroke-dasharray: 8,4;
+            rx: 12;
+            transition: all 0.3s ease;
+        }
+
+        .group-container:hover {
+            fill: rgba(255, 255, 255, 0.1);
+            stroke: #7c3aed;
+            stroke-width: 2.5;
+        }
+
+        .primary-group {
+            stroke: #10b981;
+        }
+
+        .primary-group:hover {
+            stroke: #059669;
+        }
+
+        .admin-group {
+            stroke: #ef4444;
+        }
+
+        .admin-group:hover {
+            stroke: #dc2626;
+        }
+
+        .primary-users-label {
+            position: absolute;
+            left: 220px;
+            top: 100px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #1f2937;
+            background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
+            padding: 12px 24px;
+            border-radius: 25px;
+            border: 3px solid #7c3aed;
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .secondary-users-label {
+            position: absolute;
+            right: 220px;
+            top: 100px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #1f2937;
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            padding: 12px 24px;
+            border-radius: 25px;
+            border: 3px solid #e53e3e;
+            box-shadow: 0 6px 20px rgba(229, 62, 62, 0.3);
+        }
+
+        .stats {
+            background: linear-gradient(to right, #f1f5f9, #e2e8f0);
+            padding: 20px;
+            text-align: center;
+            font-size: 15px;
+            color: #475569;
+            font-weight: 600;
+            border-top: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .diagram-container {
+                height: 1300px;
+            }
+
+            .system-boundary {
+                left: 100px;
+                width: 1300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            animation: fadeIn 0.8s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BEMS - UML Use Case Diagram</h1>
+            
+        </div>
+
+        <div class="controls">
+            <button class="control-button" onclick="highlightActor('team-lead')">👥 Team Lead</button>
+            <button class="control-button" onclick="highlightActor('member')">👨‍💼 Member</button>
+            <button class="control-button" onclick="highlightActor('admin')">👤 Admin</button>
+            <button class="control-button" onclick="highlightActor('payment')">💳 Payment Gateway</button>
+            <button class="control-button" onclick="highlightActor('notification')">🔔 Notification System</button>
+            <button class="control-button" onclick="clearHighlights()">✨ Clear All</button>
+        </div>
+
+        <div class="diagram-container">
+            <svg width="1900" height="1200">
+                <!-- System Boundary -->
+                <rect x="180" y="60" width="1400" height="1050" fill="url(#systemGradient)" stroke="#10b981"
+                    stroke-width="3" stroke-dasharray="12,6" rx="16" />
+
+                <!-- Gradient Definitions -->
+                <defs>
+                    <linearGradient id="systemGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:rgba(240, 253, 244, 0.1);stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:rgba(220, 252, 231, 0.05);stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+
+                <!-- System Title -->
+                <rect x="700" y="20" width="440" height="35" fill="white" stroke="#10b981" stroke-width="2" rx="12" />
+                <text x="900" y="42" text-anchor="middle" font-size="16" font-weight="bold" fill="#047857">
+                    BEMS - Business Enterprise Management System
+                </text>
+
+                <!-- User Type Labels -->
+                <rect x="220" y="95" width="200" height="40" fill="url(#primaryGradient)" stroke="#7c3aed"
+                    stroke-width="3" rx="20" />
+                <text x="320" y="120" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f2937">
+                    PRIMARY USERS
+                </text>
+
+                <rect x="1280" y="95" width="200" height="40" fill="url(#secondaryGradient)" stroke="#e53e3e"
+                    stroke-width="3" rx="20" />
+                <text x="1380" y="120" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f2937">
+                    SECONDARY USERS
+                </text>
+
+                <defs>
+                    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ddd6fe;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#c4b5fd;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="secondaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fed7d7;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#feb2b2;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+
+                <!-- PRIMARY ACTORS (Left Side) -->
+                <!-- Team Lead -->
+                <g class="actor" data-actor="team-lead" onclick="highlightActor('team-lead')">
+                    <circle cx="100" cy="200" r="12" class="actor-figure" />
+                    <line x1="100" y1="212" x2="100" y2="260" class="actor-figure" />
+                    <line x1="75" y1="230" x2="125" y2="230" class="actor-figure" />
+                    <line x1="100" y1="260" x2="80" y2="295" class="actor-figure" />
+                    <line x1="100" y1="260" x2="120" y2="295" class="actor-figure" />
+                    <text x="100" y="315" class="actor-label">Team Lead</text>
+                </g>
+
+                <!-- Member -->
+                <g class="actor" data-actor="member" onclick="highlightActor('member')">
+                    <circle cx="100" cy="380" r="12" class="actor-figure" />
+                    <line x1="100" y1="392" x2="100" y2="440" class="actor-figure" />
+                    <line x1="75" y1="410" x2="125" y2="410" class="actor-figure" />
+                    <line x1="100" y1="440" x2="80" y2="475" class="actor-figure" />
+                    <line x1="100" y1="440" x2="120" y2="475" class="actor-figure" />
+                    <text x="100" y="495" class="actor-label">Member</text>
+                </g>
+
+                <!-- SECONDARY ACTORS (Right Side) -->
+                <!-- Admin -->
+                <g class="actor" data-actor="admin" onclick="highlightActor('admin')">
+                    <circle cx="1650" cy="200" r="12" class="actor-figure" />
+                    <line x1="1650" y1="212" x2="1650" y2="260" class="actor-figure" />
+                    <line x1="1625" y1="230" x2="1675" y2="230" class="actor-figure" />
+                    <line x1="1650" y1="260" x2="1630" y2="295" class="actor-figure" />
+                    <line x1="1650" y1="260" x2="1670" y2="295" class="actor-figure" />
+                    <text x="1650" y="315" class="actor-label">Admin</text>
+                </g>
+
+                <!-- Payment Gateway -->
+                <g class="actor" data-actor="payment" onclick="highlightActor('payment')">
+                    <circle cx="1650" cy="650" r="12" class="actor-figure" />
+                    <line x1="1650" y1="662" x2="1650" y2="710" class="actor-figure" />
+                    <line x1="1625" y1="680" x2="1675" y2="680" class="actor-figure" />
+                    <line x1="1650" y1="710" x2="1630" y2="745" class="actor-figure" />
+                    <line x1="1650" y1="710" x2="1670" y2="745" class="actor-figure" />
+                    <text x="1650" y="765" class="actor-label">Payment Gateway</text>
+                </g>
+
+                <!-- Notification System -->
+                <g class="actor" data-actor="notification" onclick="highlightActor('notification')">
+                    <circle cx="1650" cy="900" r="12" class="actor-figure" />
+                    <line x1="1650" y1="912" x2="1650" y2="960" class="actor-figure" />
+                    <line x1="1625" y1="930" x2="1675" y2="930" class="actor-figure" />
+                    <line x1="1650" y1="960" x2="1630" y2="995" class="actor-figure" />
+                    <line x1="1650" y1="960" x2="1670" y2="995" class="actor-figure" />
+                    <text x="1650" y="1015" class="actor-label">Notification System</text>
+                </g>
+
+                <!-- GROUP LABELS (LEFT SIDE - PRIMARY USERS) -->
+                <text x="320" y="170" class="group-label">1. Account & Profile Management</text>
+                <text x="350" y="270" class="group-label">2. Workspace Management</text>
+                <text x="820" y="270" class="group-label">3. Project Management</text>
+                <text x="400" y="390" class="group-label">4. Task Management</text>
+                <text x="880" y="390" class="group-label">5. Communication & Collaboration</text>
+                <text x="450" y="545" class="group-label">6. Reports & Insights</text>
+
+                <!-- GROUP LABELS (RIGHT SIDE - ADMIN) -->
+                <text x="1280" y="170" class="group-label">7. System Administration</text>
+                <text x="1260" y="255" class="group-label">8. User Management</text>
+                <text x="1280" y="385" class="group-label">9. Security & Audit</text>
+                <text x="1300" y="475" class="group-label">10. Automation</text>
+                <text x="1270" y="570" class="group-label">11. Payments & Billing</text>
+
+                <!-- GROUP CONTAINERS -->
+                <!-- Group 1: Account & Profile Management -->
+                <rect x="240" y="175" width="450" height="80" class="group-container primary-group" />
+                
+                <!-- Group 2: Workspace Management -->
+                <rect x="240" y="285" width="470" height="90" class="group-container primary-group" />
+                
+                <!-- Group 3: Project Management -->
+                <rect x="740" y="285" width="320" height="90" class="group-container primary-group" />
+                
+                <!-- Group 4: Task Management -->
+                <rect x="240" y="405" width="520" height="120" class="group-container primary-group" />
+                
+                <!-- Group 5: Communication & Collaboration -->
+                <rect x="780" y="405" width="320" height="120" class="group-container primary-group" />
+                
+                <!-- Group 6: Reports & Insights -->
+                <rect x="320" y="555" width="320" height="60" class="group-container primary-group" />
+                
+                <!-- Group 7: System Administration -->
+                <rect x="1080" y="175" width="500" height="60" class="group-container admin-group" />
+                
+                <!-- Group 8: User Management -->
+                <rect x="1080" y="265" width="450" height="100" class="group-container admin-group" />
+                
+                <!-- Group 9: Security & Audit -->
+                <rect x="1080" y="395" width="480" height="60" class="group-container admin-group" />
+                
+                <!-- Group 10: Automation -->
+                <rect x="1080" y="485" width="500" height="60" class="group-container admin-group" />
+                
+                <!-- Group 11: Payments & Billing -->
+                <rect x="1080" y="575" width="480" height="100" class="group-container admin-group" />
+
+                <!-- USE CASES - PRIMARY USERS SECTION (LEFT SIDE) -->
+
+                <!-- Group 1: Account & Profile Management -->
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="300" cy="200" rx="55" ry="18" class="use-case-oval" />
+                    <text x="300" y="205" class="use-case-text">Register Account</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="400" cy="200" rx="30" ry="18" class="use-case-oval" />
+                    <text x="400" y="205" class="use-case-text">Login</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="480" cy="200" rx="30" ry="18" class="use-case-oval" />
+                    <text x="480" y="205" class="use-case-text">Logout</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="570" cy="200" rx="45" ry="18" class="use-case-oval" />
+                    <text x="570" y="205" class="use-case-text">Reset Password</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="660" cy="200" rx="45" ry="18" class="use-case-oval" />
+                    <text x="660" y="205" class="use-case-text">Manage Profile</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="400" cy="240" rx="50" ry="18" class="use-case-oval" />
+                    <text x="400" y="245" class="use-case-text">Change Password</text>
+                </g>
+
+                <!-- Group 2: Workspace Management -->
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="300" cy="320" rx="50" ry="18" class="use-case-oval" />
+                    <text x="300" y="325" class="use-case-text">Create Workspace</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="420" cy="320" rx="60" ry="18" class="use-case-oval" />
+                    <text x="420" y="325" class="use-case-text">Edit Workspace Details</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="560" cy="320" rx="70" ry="18" class="use-case-oval" />
+                    <text x="560" y="325" class="use-case-text">Invite Member to Workspace</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="380" cy="350" rx="65" ry="18" class="use-case-oval" />
+                    <text x="380" y="355" class="use-case-text">Change Member Role</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="540" cy="350" rx="75" ry="18" class="use-case-oval" />
+                    <text x="540" y="355" class="use-case-text">Remove Member from Workspace</text>
+                </g>
+
+                <!-- Group 3: Project Management -->
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="780" cy="320" rx="45" ry="18" class="use-case-oval" />
+                    <text x="780" y="325" class="use-case-text">Create Project</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="870" cy="320" rx="55" ry="18" class="use-case-oval" />
+                    <text x="870" y="325" class="use-case-text">Edit Project Details</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="980" cy="320" rx="60" ry="18" class="use-case-oval" />
+                    <text x="980" y="325" class="use-case-text">Assign Project Members</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="820" cy="350" rx="65" ry="18" class="use-case-oval" />
+                    <text x="820" y="355" class="use-case-text">View Project Dashboard</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="940" cy="350" rx="45" ry="18" class="use-case-oval" />
+                    <text x="940" y="355" class="use-case-text">Archive Project</text>
+                </g>
+
+                <!-- Group 4: Task Management -->
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="300" cy="440" rx="40" ry="18" class="use-case-oval" />
+                    <text x="300" y="445" class="use-case-text">Create Task</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="380" cy="440" rx="40" ry="18" class="use-case-oval" />
+                    <text x="380" y="445" class="use-case-text">Assign Task</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="470" cy="440" rx="50" ry="18" class="use-case-oval" />
+                    <text x="470" y="445" class="use-case-text">Edit Task Details</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="570" cy="440" rx="50" ry="18" class="use-case-oval" />
+                    <text x="570" y="445" class="use-case-text">Update Task Status</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="660" cy="440" rx="45" ry="18" class="use-case-oval" />
+                    <text x="660" y="445" class="use-case-text">Add Subtasks</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="730" cy="440" rx="50" ry="18" class="use-case-oval" />
+                    <text x="730" y="445" class="use-case-text">Attach Files to Task</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="320" cy="480" rx="55" ry="18" class="use-case-oval" />
+                    <text x="320" y="485" class="use-case-text">Add Comment to Task</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="420" cy="480" rx="40" ry="18" class="use-case-oval" />
+                    <text x="420" y="485" class="use-case-text">Tag/Label Task</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="510" cy="480" rx="45" ry="18" class="use-case-oval" />
+                    <text x="510" y="485" class="use-case-text">Set Task Priority</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="610" cy="480" rx="50" ry="18" class="use-case-oval" />
+                    <text x="610" y="485" class="use-case-text">Set Task Deadline</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="710" cy="480" rx="55" ry="18" class="use-case-oval" />
+                    <text x="710" y="485" class="use-case-text">Add Watchers to Task</text>
+                </g>
+
+                <!-- Group 5: Communication & Collaboration -->
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="820" cy="440" rx="45" ry="18" class="use-case-oval" />
+                    <text x="820" y="445" class="use-case-text">Add Comment</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="920" cy="440" rx="55" ry="18" class="use-case-oval" />
+                    <text x="920" y="445" class="use-case-text">Edit/Delete Comment</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="1020" cy="440" rx="60" ry="18" class="use-case-oval" />
+                    <text x="1020" y="445" class="use-case-text">Mention User in Comment</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="840" cy="480" rx="65" ry="18" class="use-case-oval" />
+                    <text x="840" y="485" class="use-case-text">Subscribe to Task Updates</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="970" cy="480" rx="50" ry="18" class="use-case-oval" />
+                    <text x="970" y="485" class="use-case-text">View Notifications</text>
+                </g>
+                <g class="use-case" data-actors="team-lead,member">
+                    <ellipse cx="900" cy="510" rx="65" ry="18" class="use-case-oval" />
+                    <text x="900" y="515" class="use-case-text">Mark Notifications as Read</text>
+                </g>
+
+                <!-- Group 6: Reports & Insights -->
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="380" cy="580" rx="50" ry="18" class="use-case-oval" />
+                    <text x="380" y="585" class="use-case-text">View Task Progress</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="480" cy="580" rx="55" ry="18" class="use-case-oval" />
+                    <text x="480" y="585" class="use-case-text">View Project Summary</text>
+                </g>
+                <g class="use-case" data-actors="team-lead">
+                    <ellipse cx="580" cy="580" rx="45" ry="18" class="use-case-oval" />
+                    <text x="580" y="585" class="use-case-text">Export Reports</text>
+                </g>
+
+                <!-- ADMIN USE CASES - RIGHT SIDE -->
+
+                <!-- Group 7: System Administration -->
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1120" cy="200" rx="45" ry="18" class="use-case-oval" />
+                    <text x="1120" y="205" class="use-case-text">Manage Users</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1230" cy="200" rx="65" ry="18" class="use-case-oval" />
+                    <text x="1230" y="205" class="use-case-text">Configure System Settings</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1360" cy="200" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1360" y="205" class="use-case-text">Deactivate Account</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1460" cy="200" rx="45" ry="18" class="use-case-oval" />
+                    <text x="1460" y="205" class="use-case-text">Backup Data</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1540" cy="200" rx="45" ry="18" class="use-case-oval" />
+                    <text x="1540" y="205" class="use-case-text">Restore Data</text>
+                </g>
+
+                <!-- Group 8: User Management -->
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1130" cy="300" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1130" y="305" class="use-case-text">Delete Workspace</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1230" cy="300" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1230" y="305" class="use-case-text">Archive Workspace</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1340" cy="300" rx="45" ry="18" class="use-case-oval" />
+                    <text x="1340" y="305" class="use-case-text">Delete Project</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1430" cy="300" rx="40" ry="18" class="use-case-oval" />
+                    <text x="1430" y="305" class="use-case-text">Delete Task</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1180" cy="340" rx="75" ry="18" class="use-case-oval" />
+                    <text x="1180" y="345" class="use-case-text">Transfer Workspace Ownership</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1380" cy="340" rx="75" ry="18" class="use-case-oval" />
+                    <text x="1380" y="345" class="use-case-text">Remove Member from Workspace</text>
+                </g>
+
+                <!-- Group 9: Security & Audit -->
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1140" cy="420" rx="65" ry="18" class="use-case-oval" />
+                    <text x="1140" y="425" class="use-case-text">Manage Roles & Permissions</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1270" cy="420" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1270" y="425" class="use-case-text">View Audit Logs</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1380" cy="420" rx="60" ry="18" class="use-case-oval" />
+                    <text x="1380" y="425" class="use-case-text">Monitor User Activity</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1500" cy="420" rx="55" ry="18" class="use-case-oval" />
+                    <text x="1500" y="425" class="use-case-text">Security Settings</text>
+                </g>
+
+                <!-- Group 10: Automation -->
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1140" cy="510" rx="60" ry="18" class="use-case-oval" />
+                    <text x="1140" y="515" class="use-case-text">Create Automation Rule</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1270" cy="510" rx="65" ry="18" class="use-case-oval" />
+                    <text x="1270" y="515" class="use-case-text">Edit/Delete Automation Rule</text>
+                </g>
+                <g class="use-case" data-actors="notification">
+                    <ellipse cx="1390" cy="510" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1390" y="515" class="use-case-text">Trigger Automation</text>
+                </g>
+                <g class="use-case" data-actors="notification">
+                    <ellipse cx="1490" cy="510" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1490" y="515" class="use-case-text">Receive Reminders</text>
+                </g>
+
+                <!-- Group 11: Payments & Billing -->
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1140" cy="610" rx="60" ry="18" class="use-case-oval" />
+                    <text x="1140" y="615" class="use-case-text">View Subscription Plan</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1260" cy="610" rx="55" ry="18" class="use-case-oval" />
+                    <text x="1260" y="615" class="use-case-text">Upgrade Subscription</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1360" cy="610" rx="55" ry="18" class="use-case-oval" />
+                    <text x="1360" y="615" class="use-case-text">Cancel Subscription</text>
+                </g>
+                <g class="use-case" data-actors="admin">
+                    <ellipse cx="1470" cy="610" rx="55" ry="18" class="use-case-oval" />
+                    <text x="1470" y="615" class="use-case-text">View Billing History</text>
+                </g>
+                <g class="use-case" data-actors="payment">
+                    <ellipse cx="1240" cy="650" rx="50" ry="18" class="use-case-oval" />
+                    <text x="1240" y="655" class="use-case-text">Process Payment</text>
+                </g>
+
+                <!-- External System Use Cases -->
+                <g class="use-case" data-actors="notification">
+                    <ellipse cx="1000" cy="900" rx="60" ry="18" class="use-case-oval" />
+                    <text x="1000" y="905" class="use-case-text">Receive Task Notification</text>
+                </g>
+
+                <!-- ASSOCIATION LINES (initially hidden) -->
+                <!-- Team Lead associations -->
+                <!-- Group 1: Account & Profile Management -->
+                <line x1="120" y1="200" x2="245" y2="200" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="200" x2="370" y2="200" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="200" x2="450" y2="200" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="200" x2="525" y2="200" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="200" x2="615" y2="200" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="200" x2="350" y2="240" class="association-line" data-actor="team-lead" />
+                
+                <!-- Group 2: Workspace Management - route below Group 1 -->
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="250" y2="320" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="360" y2="320" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="490" y2="320" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="315" y2="350" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="465" y2="350" class="association-line" data-actor="team-lead" />
+                
+                <!-- Group 3: Project Management - route below Groups 1-2 -->
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="700" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="700" y1="280" x2="735" y2="320" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="700" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="700" y1="280" x2="815" y2="320" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="700" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="700" y1="280" x2="920" y2="320" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="280" x2="700" y2="280" class="association-line" data-actor="team-lead" />
+                <line x1="700" y1="280" x2="885" y2="350" class="association-line" data-actor="team-lead" />
+                
+                <!-- Group 4: Task Management - route below Groups 1-3 -->
+                <line x1="120" y1="200" x2="120" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="400" x2="260" y2="440" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="400" x2="340" y2="440" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="400" x2="200" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="200" y1="400" x2="200" y2="500" class="association-line" data-actor="team-lead" />
+                <line x1="200" y1="500" x2="470" y2="480" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="400" x2="200" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="200" y1="400" x2="200" y2="500" class="association-line" data-actor="team-lead" />
+                <line x1="200" y1="500" x2="570" y2="480" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="400" x2="200" y2="400" class="association-line" data-actor="team-lead" />
+                <line x1="200" y1="400" x2="200" y2="500" class="association-line" data-actor="team-lead" />
+                <line x1="200" y1="500" x2="670" y2="480" class="association-line" data-actor="team-lead" />
+                
+                <!-- Group 6: Reports & Insights - route below all other groups -->
+                <line x1="120" y1="200" x2="120" y2="540" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="540" x2="330" y2="580" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="540" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="540" x2="425" y2="580" class="association-line" data-actor="team-lead" />
+                
+                <line x1="120" y1="200" x2="120" y2="540" class="association-line" data-actor="team-lead" />
+                <line x1="120" y1="540" x2="535" y2="580" class="association-line" data-actor="team-lead" />
+
+                <!-- Member associations -->
+                <!-- Group 1: Account & Profile Management (shared with Team Lead) -->
+                <line x1="120" y1="380" x2="245" y2="200" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="370" y2="200" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="450" y2="200" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="525" y2="200" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="615" y2="200" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="350" y2="240" class="association-line" data-actor="member" />
+                
+                <!-- Group 3: Project Management (View Project Dashboard) - route below groups -->
+                <line x1="120" y1="380" x2="120" y2="320" class="association-line" data-actor="member" />
+                <line x1="120" y1="320" x2="700" y2="320" class="association-line" data-actor="member" />
+                <line x1="700" y1="320" x2="755" y2="350" class="association-line" data-actor="member" />
+                
+                <!-- Group 4: Task Management (shared with Team Lead) -->
+                <line x1="120" y1="380" x2="430" y2="440" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="520" y2="440" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="610" y2="440" class="association-line" data-actor="member" />
+                <line x1="120" y1="380" x2="690" y2="440" class="association-line" data-actor="member" />
+                
+                <!-- Route below to Task Management bottom row -->
+                <line x1="120" y1="380" x2="120" y2="500" class="association-line" data-actor="member" />
+                <line x1="120" y1="500" x2="275" y2="480" class="association-line" data-actor="member" />
+                
+                <line x1="120" y1="380" x2="120" y2="500" class="association-line" data-actor="member" />
+                <line x1="120" y1="500" x2="380" y2="480" class="association-line" data-actor="member" />
+                
+                <!-- Group 5: Communication & Collaboration - route below task management -->
+                <line x1="120" y1="380" x2="120" y2="400" class="association-line" data-actor="member" />
+                <line x1="120" y1="400" x2="775" y2="440" class="association-line" data-actor="member" />
+                
+                <line x1="120" y1="380" x2="120" y2="400" class="association-line" data-actor="member" />
+                <line x1="120" y1="400" x2="865" y2="440" class="association-line" data-actor="member" />
+                
+                <line x1="120" y1="380" x2="120" y2="400" class="association-line" data-actor="member" />
+                <line x1="120" y1="400" x2="960" y2="440" class="association-line" data-actor="member" />
+                
+                <!-- Route below to Communication bottom row -->
+                <line x1="120" y1="380" x2="120" y2="520" class="association-line" data-actor="member" />
+                <line x1="120" y1="520" x2="775" y2="480" class="association-line" data-actor="member" />
+                
+                <line x1="120" y1="380" x2="120" y2="520" class="association-line" data-actor="member" />
+                <line x1="120" y1="520" x2="915" y2="480" class="association-line" data-actor="member" />
+                
+                <line x1="120" y1="380" x2="120" y2="530" class="association-line" data-actor="member" />
+                <line x1="120" y1="530" x2="835" y2="510" class="association-line" data-actor="member" />
+
+                <!-- Admin associations -->
+                <!-- Group 7: System Administration -->
+                <line x1="1630" y1="200" x2="1075" y2="200" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="200" x2="1165" y2="200" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="200" x2="1310" y2="200" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="200" x2="1415" y2="200" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="200" x2="1495" y2="200" class="association-line" data-actor="admin" />
+                
+                <!-- Group 8: User Management - route below Group 7 -->
+                <line x1="1630" y1="200" x2="1630" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="270" x2="1080" y2="300" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="270" x2="1180" y2="300" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="270" x2="1295" y2="300" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="270" x2="1390" y2="300" class="association-line" data-actor="admin" />
+                
+                <!-- Route below to User Management bottom row -->
+                <line x1="1630" y1="200" x2="1630" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="270" x2="1500" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1500" y1="270" x2="1500" y2="360" class="association-line" data-actor="admin" />
+                <line x1="1500" y1="360" x2="1105" y2="340" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="270" x2="1500" y2="270" class="association-line" data-actor="admin" />
+                <line x1="1500" y1="270" x2="1500" y2="360" class="association-line" data-actor="admin" />
+                <line x1="1500" y1="360" x2="1305" y2="340" class="association-line" data-actor="admin" />
+                
+                <!-- Group 9: Security & Audit - route below Groups 7-8 -->
+                <line x1="1630" y1="200" x2="1630" y2="380" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="380" x2="1075" y2="420" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="380" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="380" x2="1220" y2="420" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="380" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="380" x2="1320" y2="420" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="380" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="380" x2="1445" y2="420" class="association-line" data-actor="admin" />
+                
+                <!-- Group 10: Automation - route below Groups 7-9 -->
+                <line x1="1630" y1="200" x2="1630" y2="470" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="470" x2="1080" y2="510" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="470" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="470" x2="1205" y2="510" class="association-line" data-actor="admin" />
+                
+                <!-- Group 11: Payments & Billing - route below all other groups -->
+                <line x1="1630" y1="200" x2="1630" y2="570" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="570" x2="1080" y2="610" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="570" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="570" x2="1205" y2="610" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="570" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="570" x2="1305" y2="610" class="association-line" data-actor="admin" />
+                
+                <line x1="1630" y1="200" x2="1630" y2="570" class="association-line" data-actor="admin" />
+                <line x1="1630" y1="570" x2="1415" y2="610" class="association-line" data-actor="admin" />
+
+                <!-- Payment Gateway associations -->
+                <line x1="1630" y1="650" x2="1190" y2="650" class="association-line" data-actor="payment" />
+
+                <!-- Notification System associations -->
+                <line x1="1630" y1="900" x2="1340" y2="510" class="association-line" data-actor="notification" />
+                <line x1="1630" y1="900" x2="1440" y2="510" class="association-line" data-actor="notification" />
+                <line x1="1630" y1="900" x2="940" y2="900" class="association-line" data-actor="notification" />
+            </svg>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <strong>Total Use Cases:</strong>
+                <span class="stat-number" id="total-cases">52</span>
+            </div>
+            <div class="stat-item">
+                <strong>Visible:</strong>
+                <span class="stat-number" id="visible-cases">52</span>
+            </div>
+            <div class="stat-item">
+                <strong>Primary Users:</strong>
+                <span class="stat-number">2</span>
+                <span>(Team Lead, Member)</span>
+            </div>
+            <div class="stat-item">
+                <strong>Secondary Users:</strong>
+                <span class="stat-number">3</span>
+                <span>(Admin, Payment, Notification)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function highlightActor(actorType) {
+            // Clear all previous highlights
+            clearHighlights();
+
+            // Highlight the selected actor
+            const actor = document.querySelector(`[data-actor="${actorType}"]`);
+            if (actor) {
+                actor.classList.add('active');
+                // Ensure the actor remains visible
+                actor.style.opacity = '1';
+            }
+
+            // Highlight associated use cases and dim others
+            const useCases = document.querySelectorAll('.use-case');
+            const associationLines = document.querySelectorAll(`.association-line[data-actor="${actorType}"]`);
+
+            let count = 0;
+            useCases.forEach(useCase => {
+                const actors = useCase.getAttribute('data-actors').split(',');
+                if (actors.includes(actorType)) {
+                    useCase.classList.add('highlighted');
+                    useCase.classList.remove('dimmed');
+                    useCase.style.opacity = '1';
+                    count++;
+                } else {
+                    useCase.classList.add('dimmed');
+                    useCase.classList.remove('highlighted');
+                }
+            });
+
+            // Show association lines with animation
+            associationLines.forEach((line, index) => {
+                setTimeout(() => {
+                    line.classList.add('highlighted');
+                }, index * 30);
+            });
+
+            // Update stats with animation
+            animateNumber(document.getElementById('visible-cases'), count);
+        }
+
+        function clearHighlights() {
+            // Remove all highlights and ensure visibility
+            document.querySelectorAll('.actor').forEach(actor => {
+                actor.classList.remove('active');
+                actor.style.opacity = '1';
+            });
+
+            document.querySelectorAll('.use-case').forEach(useCase => {
+                useCase.classList.remove('highlighted', 'dimmed');
+                useCase.style.opacity = '1';
+            });
+
+            document.querySelectorAll('.association-line').forEach(line => {
+                line.classList.remove('highlighted');
+            });
+
+            // Reset stats
+            animateNumber(document.getElementById('visible-cases'), 52);
+        }
+
+        function animateNumber(element, targetNumber) {
+            const startNumber = parseInt(element.textContent);
+            const duration = 500;
+            const startTime = performance.now();
+
+            function updateNumber(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                const currentNumber = Math.round(startNumber + (targetNumber - startNumber) * easeOutQuart);
+
+                element.textContent = currentNumber;
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                }
+            }
+
+            requestAnimationFrame(updateNumber);
+        }
+
+        // Enhanced hover effects with tooltips
+        document.querySelectorAll('.use-case').forEach(useCase => {
+            useCase.addEventListener('mouseenter', function (e) {
+                // Tooltip feature removed - just basic hover effect
+            });
+
+            useCase.addEventListener('mouseleave', function () {
+                // Tooltip feature removed - just basic hover effect
+            });
+        });
+
+        // Enhanced actor hover effects
+        document.querySelectorAll('.actor').forEach(actor => {
+            actor.addEventListener('mouseenter', function () {
+                if (!this.classList.contains('active')) {
+                    this.style.transform = 'scale(1.15)';
+                    this.style.filter = 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2))';
+                }
+            });
+
+            actor.addEventListener('mouseleave', function () {
+                if (!this.classList.contains('active')) {
+                    this.style.transform = '';
+                    this.style.filter = '';
+                }
+            });
+        });
+
+        // Initialize with smooth entrance animation
+        setTimeout(() => {
+            document.querySelectorAll('.use-case, .actor, .group-label').forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'scale(0.8) translateY(20px)';
+                element.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'scale(1) translateY(0)';
+                }, index * 15);
+            });
+        }, 300);
+
+        // Initialize
+        clearHighlights();
+    </script>
+</body>
+
+</html>
